@@ -1,7 +1,10 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
 import 'login_screen.dart';
-import 'dashboard_screen.dart';
+import 'offices/officer_dashboard.dart';
+import 'admin/admin_dashboard.dart';
+import 'drivers/driver_dashboard.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -14,7 +17,8 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+
+    Timer(const Duration(seconds: 2), () {
       checkLogin();
     });
   }
@@ -23,18 +27,40 @@ class _SplashScreenState extends State<SplashScreen> {
     final loggedIn = await AuthService.isLoggedIn();
     final user = await AuthService.getUser();
 
-    if (!mounted) return; // 🔥 IMPORTANT
+    if (!mounted) return;
 
-    if (loggedIn && user['name'] != null && user['email'] != null) {
+    if (loggedIn &&
+        user['name'] != null &&
+        user['email'] != null &&
+        user['role'] != null) {
+      final role = user['role'];
+
+      Widget nextScreen;
+
+      if (role == 'admin') {
+        nextScreen = AdminDashboardScreen(
+          userName: user['name']!,
+          email: user['email']!,
+          role: user['role']!,
+        );
+      } else if (role == 'officer') {
+        nextScreen = OfficerDashboardScreen(
+          userName: user['name']!,
+          email: user['email']!,
+          role: user['role']!,
+        );
+      } else {
+        // default = driver/user
+        nextScreen = DriverDashboardScreen(
+          userName: user['name']!,
+          email: user['email']!,
+          role: user['role']!,
+        );
+      }
+
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(
-          builder: (_) => DashboardScreen(
-            userName: user['name']!,
-            email: user['email']!,
-            role: user['role']!,
-          ),
-        ),
+        MaterialPageRoute(builder: (_) => nextScreen),
       );
     } else {
       Navigator.pushReplacement(
@@ -46,9 +72,22 @@ class _SplashScreenState extends State<SplashScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
+    return Scaffold(
+      backgroundColor: Colors.green.shade700,
       body: Center(
-        child: CircularProgressIndicator(),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Image.asset(
+              'asset/otoms.png',
+              width: 250,
+            ),
+            const SizedBox(height: 24),
+            const CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+            ),
+          ],
+        ),
       ),
     );
   }

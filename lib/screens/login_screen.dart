@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import '../widgets/custom_textfield.dart';
 import '../services/api_service.dart';
-import 'dashboard_screen.dart';
 import '../services/auth_service.dart';
 
+// Dashboards
+import 'admin/admin_dashboard.dart';
+import 'drivers/driver_dashboard.dart';
+import 'offices/officer_dashboard.dart';
 
 class LoginScreen extends StatelessWidget {
   const LoginScreen({super.key});
@@ -15,7 +18,14 @@ class LoginScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Login"),
+        leading: Padding(
+          padding: const EdgeInsets.all(8),
+          child: Image.asset(
+            'asset/otoms.png',
+            fit: BoxFit.contain,
+          ),
+        ),
+        title: const Text('Login'),
       ),
       body: SafeArea(
         child: Padding(
@@ -25,7 +35,7 @@ class LoginScreen extends StatelessWidget {
             children: [
               const SizedBox(height: 60),
               const Text(
-                "Welcome Back ",
+                "Welcome Back",
                 style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
@@ -63,26 +73,45 @@ class LoginScreen extends StatelessWidget {
                     if (result['status'] == 200) {
                       final user = result['data']['user'];
                       final token = result['data']['token'];
+                      final role = user['role'];
 
+                      /// 🔐 Save login data
                       await AuthService.saveLoginData(
                         token,
                         user['name'],
                         user['email'],
-                        user['role'],
+                        role,
                       );
+
+                      /// 🔁 Role-based navigation
+                      Widget nextScreen;
+
+                      if (role == 'admin') {
+                        nextScreen = AdminDashboardScreen(
+                          userName: user['name'],
+                          email: user['email'],
+                          role: user['role'],
+                        );
+                      } else if (role == 'officer') {
+                        nextScreen = OfficerDashboardScreen(
+                          userName: user['name'],
+                          email: user['email'],
+                          role: user['role'],
+                        );
+                      } else {
+                        // default = user / driver
+                        nextScreen = DriverDashboardScreen(
+                          userName: user['name'],
+                          email: user['email'],
+                          role: user['role'],
+                        );
+                      }
 
                       Navigator.pushReplacement(
                         context,
-                        MaterialPageRoute(
-                          builder: (_) => DashboardScreen(
-                            userName: user['name'],
-                            email: user['email'],
-                            role: user['role'],
-                          ),
-                        ),
+                        MaterialPageRoute(builder: (_) => nextScreen),
                       );
-                    }
-                    else {
+                    } else {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           content: Text(
