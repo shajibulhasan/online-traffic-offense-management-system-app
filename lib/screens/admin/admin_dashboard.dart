@@ -64,8 +64,6 @@ class AdminDashboardScreen extends StatelessWidget {
             drawerItem(context, Icons.traffic, "Thana List"),
             drawerItem(context, Icons.area_chart, "Area List"),
             drawerItem(context, Icons.assignment, "Assign Offices"),
-            drawerItem(context, Icons.warning, 'My Offenses'),
-
 
             const Spacer(),
 

@@ -6,8 +6,13 @@ class AuthService {
   static const _emailKey = 'user_email';
   static const _roleKey = 'role';
 
-  static Future saveLoginData(
-      String token, String name, String email, String role) async {
+  /// SAVE LOGIN DATA
+  static Future<void> saveLoginData(
+      String token,
+      String name,
+      String email,
+      String role,
+      ) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_tokenKey, token);
     await prefs.setString(_nameKey, name);
@@ -15,22 +20,30 @@ class AuthService {
     await prefs.setString(_roleKey, role);
   }
 
+  /// CHECK LOGIN
   static Future<bool> isLoggedIn() async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.containsKey(_tokenKey);
+    return prefs.getString(_tokenKey) != null;
   }
 
+  /// GET TOKEN ✅ FIXED
+  static Future<String?> getToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_tokenKey);
+  }
+
+  /// GET USER
   static Future<Map<String, String?>> getUser() async {
     final prefs = await SharedPreferences.getInstance();
     return {
-      'token': prefs.getString(_tokenKey),
       'name': prefs.getString(_nameKey),
       'email': prefs.getString(_emailKey),
       'role': prefs.getString(_roleKey),
     };
   }
 
-  static Future logout() async {
+  /// LOGOUT
+  static Future<void> logout() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.clear();
   }

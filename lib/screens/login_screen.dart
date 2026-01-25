@@ -100,7 +100,7 @@ class LoginScreen extends StatelessWidget {
                         );
                       } else {
                         // default = user / driver
-                        nextScreen = DriverDashboardScreen(
+                        nextScreen = DashboardScreen(
                           userName: user['name'],
                           email: user['email'],
                           role: user['role'],

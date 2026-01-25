@@ -51,7 +51,7 @@ class _SplashScreenState extends State<SplashScreen> {
         );
       } else {
         // default = driver/user
-        nextScreen = DriverDashboardScreen(
+        nextScreen = DashboardScreen(
           userName: user['name']!,
           email: user['email']!,
           role: user['role']!,
