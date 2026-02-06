@@ -130,6 +130,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
               ),
             ),
+            const SizedBox(height: 20),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text("Already hanve an account?"),
+                TextButton(onPressed: (){
+                  Navigator.pushReplacementNamed(context, '/login');
+                }, child: Text("Login"))
+              ],
+            )
           ],
         ),
       ),

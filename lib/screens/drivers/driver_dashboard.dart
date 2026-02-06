@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import '../../services/auth_service.dart';
 import '../login_screen.dart';
+import 'driver_profile.dart';
 import 'my_offense_screen.dart';
+
 class DashboardScreen extends StatefulWidget {
   final String userName;
   final String email;
@@ -19,17 +21,28 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
+  static const String role = "user";
   int currentIndex = 0;
+  String? token;
 
   final List<String> pages = [
     "Home",
     "My Offenses",
-    "Payments",
-    "History",
-    "Notifications",
     "Profile",
-    "Settings",
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    loadToken();
+  }
+
+  Future<void> loadToken() async {
+    final t = await AuthService.getToken();
+    setState(() {
+      token = t;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -61,11 +74,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
             drawerItem(Icons.home, "Home", 0),
             drawerItem(Icons.gavel, "My Offenses", 1),
-            drawerItem(Icons.payment, "Payments", 2),
-            drawerItem(Icons.history, "History", 3),
-            drawerItem(Icons.notifications, "Notifications", 4),
-            drawerItem(Icons.person, "Profile", 5),
-            drawerItem(Icons.settings, "Settings", 6),
+            drawerItem(Icons.person, "Profile", 2),
+
+
 
             const Spacer(),
 
@@ -78,10 +89,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ),
       ),
 
-      /// 🔥 BODY (AUTO CHANGE)
+      /// 🔥 BODY
       body: getPage(),
 
-      /// 🔹 Bottom Navigation (LIMITED)
+      /// 🔹 Bottom Navigation (SAFE)
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: currentIndex,
         onTap: (index) {
@@ -91,29 +102,26 @@ class _DashboardScreenState extends State<DashboardScreen> {
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
           BottomNavigationBarItem(icon: Icon(Icons.gavel), label: "Offenses"),
-          BottomNavigationBarItem(icon: Icon(Icons.payment), label: "Payments"),
           BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profile"),
         ],
       ),
     );
   }
 
-  /// 🔹 DRAWER ITEM
+  /// 🔹 DRAWER ITEM (BOTTOM NAV SYNC)
   Widget drawerItem(IconData icon, String title, int index) {
     return ListTile(
       leading: Icon(icon),
       title: Text(title),
       selected: currentIndex == index,
       onTap: () {
-        setState(() {
-          currentIndex = index;
-        });
-        Navigator.pop(context); // close drawer
+        setState(() => currentIndex = index);
+        Navigator.pop(context);
       },
     );
   }
 
-  /// 🔹 PAGE SWITCH
+  /// 🔹 PAGE SWITCH (ONLY 0–2)
   Widget getPage() {
     switch (currentIndex) {
       case 0:
@@ -121,21 +129,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
       case 1:
         return const MyOffenseScreen();
       case 2:
-        return centerText("Payments");
-      case 3:
-        return centerText("History");
-      case 4:
-        return centerText("Notifications");
-      case 5:
-        return centerText("Profile");
-      case 6:
-        return centerText("Settings");
+        if (token == null) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        return DriverProfileScreen(token: token!);
       default:
         return homePage();
     }
   }
 
-  /// 🔹 PAGES
+  /// 🔹 HOME PAGE
   Widget homePage() {
     return Padding(
       padding: const EdgeInsets.all(24),
@@ -162,11 +165,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget centerText(String title) {
-    return Center(
-      child: Text(
-        title,
-        style: const TextStyle(fontSize: 22),
+  /// 🔹 SIMPLE PAGE
+  Widget simplePage(String title) {
+    return Scaffold(
+      appBar: AppBar(title: Text(title)),
+      body: Center(
+        child: Text(
+          title,
+          style: const TextStyle(fontSize: 22),
+        ),
       ),
     );
   }
