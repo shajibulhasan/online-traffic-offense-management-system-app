@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import '../../services/auth_service.dart';
 import '../login_screen.dart';
+import 'driver_profile.dart';
 import 'my_offense_screen.dart';
+
 class DashboardScreen extends StatefulWidget {
   final String userName;
   final String email;
@@ -19,17 +21,29 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
-  int currentIndex = 0;
+  int currentIndex = 0; // ONLY 0–3 (BottomNav safe)
+  String? token;
 
   final List<String> pages = [
     "Home",
     "My Offenses",
     "Payments",
-    "History",
-    "Notifications",
     "Profile",
-    "Settings",
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    loadToken();
+  }
+
+  /// 🔐 LOAD TOKEN
+  Future<void> loadToken() async {
+    final t = await AuthService.getToken();
+    setState(() {
+      token = t;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -62,10 +76,52 @@ class _DashboardScreenState extends State<DashboardScreen> {
             drawerItem(Icons.home, "Home", 0),
             drawerItem(Icons.gavel, "My Offenses", 1),
             drawerItem(Icons.payment, "Payments", 2),
-            drawerItem(Icons.history, "History", 3),
-            drawerItem(Icons.notifications, "Notifications", 4),
-            drawerItem(Icons.person, "Profile", 5),
-            drawerItem(Icons.settings, "Settings", 6),
+            drawerItem(Icons.person, "Profile", 3),
+
+            const Divider(),
+
+            /// 🔹 EXTRA PAGES (NO INDEX CHANGE)
+            ListTile(
+              leading: const Icon(Icons.history),
+              title: const Text("History"),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => simplePage("History"),
+                  ),
+                );
+              },
+            ),
+
+            ListTile(
+              leading: const Icon(Icons.notifications),
+              title: const Text("Notifications"),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => simplePage("Notifications"),
+                  ),
+                );
+              },
+            ),
+
+            ListTile(
+              leading: const Icon(Icons.settings),
+              title: const Text("Settings"),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => simplePage("Settings"),
+                  ),
+                );
+              },
+            ),
 
             const Spacer(),
 
@@ -78,10 +134,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ),
       ),
 
-      /// 🔥 BODY (AUTO CHANGE)
+      /// 🔥 BODY
       body: getPage(),
 
-      /// 🔹 Bottom Navigation (LIMITED)
+      /// 🔹 Bottom Navigation (SAFE)
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: currentIndex,
         onTap: (index) {
@@ -98,22 +154,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  /// 🔹 DRAWER ITEM
+  /// 🔹 DRAWER ITEM (BOTTOM NAV SYNC)
   Widget drawerItem(IconData icon, String title, int index) {
     return ListTile(
       leading: Icon(icon),
       title: Text(title),
       selected: currentIndex == index,
       onTap: () {
-        setState(() {
-          currentIndex = index;
-        });
-        Navigator.pop(context); // close drawer
+        setState(() => currentIndex = index);
+        Navigator.pop(context);
       },
     );
   }
 
-  /// 🔹 PAGE SWITCH
+  /// 🔹 PAGE SWITCH (ONLY 0–3)
   Widget getPage() {
     switch (currentIndex) {
       case 0:
@@ -121,21 +175,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
       case 1:
         return const MyOffenseScreen();
       case 2:
-        return centerText("Payments");
+        return simplePage("Payments");
       case 3:
-        return centerText("History");
-      case 4:
-        return centerText("Notifications");
-      case 5:
-        return centerText("Profile");
-      case 6:
-        return centerText("Settings");
+        if (token == null) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        return DriverProfileScreen(token: token!);
       default:
         return homePage();
     }
   }
 
-  /// 🔹 PAGES
+  /// 🔹 HOME PAGE
   Widget homePage() {
     return Padding(
       padding: const EdgeInsets.all(24),
@@ -162,11 +213,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget centerText(String title) {
-    return Center(
-      child: Text(
-        title,
-        style: const TextStyle(fontSize: 22),
+  /// 🔹 SIMPLE PAGE
+  Widget simplePage(String title) {
+    return Scaffold(
+      appBar: AppBar(title: Text(title)),
+      body: Center(
+        child: Text(
+          title,
+          style: const TextStyle(fontSize: 22),
+        ),
       ),
     );
   }
