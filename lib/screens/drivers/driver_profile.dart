@@ -1,3 +1,4 @@
+// lib/screens/drivers/driver_profile_screen.dart
 import 'package:flutter/material.dart';
 import 'package:online_traffic_offense_management_system/screens/drivers/update_profile.dart';
 import '../../services/driver_service.dart';
@@ -23,8 +24,24 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
   }
 
   void _loadDriverProfile() {
+    debugPrint('🔄 Loading driver profile...');
     setState(() {
-      driverFuture = DriverService.fetchDriverProfile(widget.token);
+      driverFuture = DriverService.fetchDriverProfile(widget.token)
+          .then((driver) {
+        debugPrint('✅ Driver loaded successfully:');
+        debugPrint('  - Name: ${driver.name}');
+        debugPrint('  - Email: ${driver.email}');
+        debugPrint('  - Phone: ${driver.phone}');
+        debugPrint('  - License: ${driver.license}');
+        debugPrint('  - Role: ${driver.role}');
+
+        _currentDriver = driver;
+        return driver;
+      })
+          .catchError((error) {
+        debugPrint('❌ Error loading driver: $error');
+        return error;
+      });
     });
   }
 
@@ -39,23 +56,21 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
       ),
     );
 
-    // যদি আপডেটেড ড্রাইভার ডাটা ফেরত আসে, তাহলে UI আপডেট করুন
     if (updatedDriver != null && updatedDriver is DriverModel) {
       setState(() {
         _currentDriver = updatedDriver;
-        // FutureBuilder রিফ্রেশ করার জন্য নতুন Future সেট করুন
         driverFuture = Future.value(updatedDriver);
       });
 
-      // Success message দেখান
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Profile updated successfully"),
-          backgroundColor: Colors.green,
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Profile updated successfully"),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
     } else {
-      // যদি কোনো ডাটা না আসে, তাহলে রিফ্রেশ করুন
       _loadDriverProfile();
     }
   }
@@ -64,13 +79,15 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Driver Profile"),
+        title: const Text("My Profile"),
         backgroundColor: Colors.green,
+        foregroundColor: Colors.white,
+        elevation: 0,
         actions: [
-          // Refresh button
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: _loadDriverProfile,
+            tooltip: 'Refresh',
           ),
         ],
       ),
@@ -78,41 +95,69 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
         onRefresh: () async {
           _loadDriverProfile();
         },
+        color: Colors.green,
         child: FutureBuilder<DriverModel>(
           future: driverFuture,
           builder: (context, snapshot) {
+            // Loading state
             if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator());
-            } else if (snapshot.hasError) {
-              return Center(
+              return const Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(
-                      Icons.error_outline,
-                      color: Colors.red,
-                      size: 60,
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'Error: ${snapshot.error}',
-                      style: const TextStyle(color: Colors.red),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 16),
-                    ElevatedButton(
-                      onPressed: _loadDriverProfile,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.green,
-                      ),
-                      child: const Text('Try Again'),
-                    ),
+                    CircularProgressIndicator(color: Colors.green),
+                    SizedBox(height: 16),
+                    Text("Loading profile..."),
                   ],
                 ),
               );
             }
 
+            // Error state
+            if (snapshot.hasError) {
+              debugPrint('❌ Snapshot error: ${snapshot.error}');
+              return Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(
+                        Icons.error_outline,
+                        color: Colors.red,
+                        size: 60,
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Error: ${snapshot.error}',
+                        style: const TextStyle(color: Colors.red),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 16),
+                      ElevatedButton(
+                        onPressed: _loadDriverProfile,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green,
+                          foregroundColor: Colors.white,
+                        ),
+                        child: const Text('Try Again'),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }
+
+            // No data state
+            if (!snapshot.hasData || snapshot.data == null) {
+              return const Center(
+                child: Text("No data available"),
+              );
+            }
+
             final driver = snapshot.data!;
+
+            debugPrint('🎨 Rendering UI for: ${driver.name}');
 
             return SingleChildScrollView(
               padding: const EdgeInsets.all(16),
@@ -148,9 +193,9 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
                               fontWeight: FontWeight.bold,
                             ),
                           ),
-                          const Text(
-                            "Driver Profile",
-                            style: TextStyle(color: Colors.white70),
+                          Text(
+                            driver.displayRole, // Use displayRole instead of hardcoded text
+                            style: const TextStyle(color: Colors.white70),
                           ),
                         ],
                       ),
@@ -161,28 +206,35 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
                       padding: const EdgeInsets.all(20),
                       child: Column(
                         children: [
-                          _infoRow("Email", driver.email),
-                          _infoRow("Phone", driver.phone ?? "Not provided"),
-                          _infoRow("NID", driver.nid ?? "Not provided"),
-                          if (driver.role == "driver")
-                            _infoRow("License", driver.license ?? "Not provided"),
+                          _buildInfoTile(Icons.email, "Email", driver.email),
+                          const Divider(),
+                          _buildInfoTile(Icons.phone, "Phone", driver.phone ?? "Not provided"),
+                          const Divider(),
+                          _buildInfoTile(Icons.badge, "NID", driver.nid ?? "Not provided"),
+                          const Divider(),
+                          // Show license if available (for both user and driver roles)
+                          if (driver.license != null && driver.license!.isNotEmpty)
+                            _buildInfoTile(Icons.drive_eta, "License", driver.license!),
+
+
+
                           const SizedBox(height: 20),
 
                           // Update Profile Button
                           ElevatedButton.icon(
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.green,
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 30, vertical: 12),
+                              foregroundColor: Colors.white,
+                              minimumSize: const Size(double.infinity, 50),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(8),
                               ),
                             ),
                             onPressed: () => _navigateToUpdateProfile(driver),
-                            icon: const Icon(Icons.edit, color: Colors.white),
+                            icon: const Icon(Icons.edit),
                             label: const Text(
                               "Update Profile",
-                              style: TextStyle(color: Colors.white, fontSize: 16),
+                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                             ),
                           ),
                         ],
@@ -198,7 +250,40 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
     );
   }
 
-  /// 🔹 Build info row
+  Widget _buildInfoTile(IconData icon, String title, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        children: [
+          Icon(icon, color: Colors.green, size: 22),
+          const SizedBox(width: 16),
+          Expanded(
+            flex: 2,
+            child: Text(
+              title,
+              style: const TextStyle(
+                fontWeight: FontWeight.w600,
+                color: Colors.grey,
+                fontSize: 15,
+              ),
+            ),
+          ),
+          Expanded(
+            flex: 3,
+            child: Text(
+              value,
+              style: const TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // For backward compatibility
   Widget _infoRow(String title, String value) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
@@ -210,7 +295,9 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
             child: Text(
               title,
               style: const TextStyle(
-                  fontWeight: FontWeight.bold, color: Colors.grey),
+                fontWeight: FontWeight.bold,
+                color: Colors.grey,
+              ),
             ),
           ),
           Expanded(
@@ -229,6 +316,7 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
     if (driver.profileImage != null && driver.profileImage!.isNotEmpty) {
       return NetworkImage(driver.profileImage!);
     }
+    // Make sure you have this asset in pubspec.yaml
     return const AssetImage("asset/unknown.png");
   }
 }

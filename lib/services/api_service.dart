@@ -1,10 +1,11 @@
 import 'dart:convert';
 import 'package:flutter/cupertino.dart';
 import 'package:http/http.dart' as http;
+import 'package:online_traffic_offense_management_system/urls/urls.dart';
 import 'auth_service.dart';
 
 class ApiService {
-  static const String baseUrl = "http://10.0.2.2:8000/api";
+  static const String baseUrl = Urls.baseUrl;
   // emulator
 
 

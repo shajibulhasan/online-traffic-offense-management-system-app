@@ -78,6 +78,7 @@ class LoginScreen extends StatelessWidget {
                       /// 🔐 Save login data
                       await AuthService.saveLoginData(
                         token,
+                        user['id'],
                         user['name'],
                         user['email'],
                         role,
@@ -95,8 +96,10 @@ class LoginScreen extends StatelessWidget {
                       } else if (role == 'officer') {
                         nextScreen = OfficerDashboardScreen(
                           userName: user['name'],
+                          id: user['id'],
                           email: user['email'],
                           role: user['role'],
+                          thana: user['thana'] ?? "Unknown",
                         );
                       } else {
                         // default = user / driver

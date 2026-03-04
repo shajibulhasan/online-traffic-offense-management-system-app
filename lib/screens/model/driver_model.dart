@@ -1,3 +1,6 @@
+// lib/models/driver_model.dart
+import 'package:flutter/cupertino.dart';
+
 class DriverModel {
   final int id;
   final String name;
@@ -5,8 +8,12 @@ class DriverModel {
   final String? phone;
   final String? nid;
   final String? license;
-  final String? profileImage;
   final String role;
+  final int? totalPoints;
+  final String? profileImage;
+  final int? status;
+  final String? district;
+  final String? thana;
 
   DriverModel({
     required this.id,
@@ -15,23 +22,46 @@ class DriverModel {
     this.phone,
     this.nid,
     this.license,
-    this.profileImage,
     required this.role,
+    this.totalPoints,
+    this.profileImage,
+    this.status,
+    this.district,
+    this.thana,
   });
 
   factory DriverModel.fromJson(Map<String, dynamic> json) {
-    final data = json['data']; // 👈 VERY IMPORTANT
+    debugPrint('🔄 Parsing DriverModel from JSON: $json');
 
     return DriverModel(
-      id: data['id'],
-      name: data['name'] ?? '',
-      email: data['email'] ?? '',
-      phone: data['phone'],
-      nid: data['nid'],
-      license: data['license'],
-      profileImage: data['profile_image'],
-      role: data['role'] ?? '',
+      id: json['id'] ?? 0,
+      name: json['name'] ?? 'Unknown',
+      email: json['email'] ?? '',
+      phone: json['phone']?.toString(),
+      nid: json['nid']?.toString(),
+      license: json['license']?.toString(),
+      role: json['role'] ?? 'user',
+      totalPoints: json['total_points'],
+      profileImage: json['profile_image'],
+      status: json['status'],
+      district: json['district'],
+      thana: json['thana'],
     );
+  }
+
+  // Helper method to check if user is driver
+  bool get isDriver {
+    return role.toLowerCase() == 'driver' ||
+        role.toLowerCase() == 'user';  // 'user' role কেও driver হিসেবে ধরা
+  }
+
+  // Display role for UI
+  String get displayRole {
+    if (role.toLowerCase() == 'user') return 'Driver';
+    if (role.toLowerCase() == 'driver') return 'Driver';
+    if (role.toLowerCase() == 'admin') return 'Admin';
+    if (role.toLowerCase() == 'officer') return 'Officer';
+    return role;
   }
 
   DriverModel copyWith({
@@ -40,7 +70,13 @@ class DriverModel {
     String? email,
     String? phone,
     String? nid,
+    String? license,
     String? role,
+    int? totalPoints,
+    String? profileImage,
+    int? status,
+    String? district,
+    String? thana,
   }) {
     return DriverModel(
       id: id ?? this.id,
@@ -48,18 +84,18 @@ class DriverModel {
       email: email ?? this.email,
       phone: phone ?? this.phone,
       nid: nid ?? this.nid,
+      license: license ?? this.license,
       role: role ?? this.role,
+      totalPoints: totalPoints ?? this.totalPoints,
+      profileImage: profileImage ?? this.profileImage,
+      status: status ?? this.status,
+      district: district ?? this.district,
+      thana: thana ?? this.thana,
     );
   }
 
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'name': name,
-      'email': email,
-      'phone': phone,
-      'nid': nid,
-      'role': role,
-    };
+  @override
+  String toString() {
+    return 'DriverModel(id: $id, name: $name, email: $email, role: $role)';
   }
 }
