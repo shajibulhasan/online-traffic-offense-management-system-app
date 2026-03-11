@@ -156,7 +156,7 @@ class _OfficerDashboardScreenState extends State<OfficerDashboardScreen> {
           token: token!,
         );
       case 2:
-        return OffenseList();
+        return OfficerOffenseListScreen();
       case 3:
         if (token == null) {
           return const Center(child: CircularProgressIndicator());

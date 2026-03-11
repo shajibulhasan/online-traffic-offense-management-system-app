@@ -1,3 +1,3 @@
 class Urls{
-  static const String baseUrl = 'http://192.168.0.197:8000/api';
+  static const String baseUrl = 'http://192.168.0.199:8000/api';
 }
