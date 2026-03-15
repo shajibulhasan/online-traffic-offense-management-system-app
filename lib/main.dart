@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:online_traffic_offense_management_system/screens/offices/edit_offense_screen.dart';
 import 'package:online_traffic_offense_management_system/screens/splash_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/register_screen.dart';

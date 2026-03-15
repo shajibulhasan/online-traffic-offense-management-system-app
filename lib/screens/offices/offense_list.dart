@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:online_traffic_offense_management_system/screens/model/driver_model.dart';
 import 'dart:convert';
 import '../../services/auth_service.dart';
 import '../../urls/urls.dart';
+import 'edit_offense_screen.dart';
 
 class OfficerOffenseListScreen extends StatefulWidget {
   @override
@@ -325,11 +327,22 @@ class _OfficerOffenseListScreenState extends State<OfficerOffenseListScreen> {
                       children: [
                         Expanded(
                           child: ElevatedButton(
-                            onPressed: () {
-                              Navigator.pushNamed(
+                            // When navigating to edit screen
+                            onPressed: () async {
+                              final result = await Navigator.push(
                                 context,
-                                '/Officer/updateOffense/${item.id}',
+                                MaterialPageRoute(
+                                  builder: (context) => EditOffenseScreen(
+                                    token: AuthService.getToken().toString(), // You need to pass the token
+                                    offenseId: item.id!,
+                                  ),
+                                ),
                               );
+
+                              // If edit was successful or offense was deleted, refresh the list
+                              if (result == true) {
+                                _performSearch();
+                              }
                             },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.blue,

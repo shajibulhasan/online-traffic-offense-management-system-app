@@ -9,6 +9,8 @@ class OffenseModel {
   final String officerName;
   final int officerId;
   final DateTime? createdAt;
+  final String? status;
+  final String? transactionId;
 
   OffenseModel({
     this.id,
@@ -21,6 +23,8 @@ class OffenseModel {
     required this.officerName,
     required this.officerId,
     this.createdAt,
+    this.status,
+    this.transactionId,
   });
 
   factory OffenseModel.fromJson(Map<String, dynamic> json) {
@@ -37,6 +41,8 @@ class OffenseModel {
       createdAt: json['created_at'] != null
           ? DateTime.parse(json['created_at'])
           : null,
+      status: json['status'],
+      transactionId: json['transaction_id']
     );
   }
 
@@ -50,6 +56,8 @@ class OffenseModel {
       'thana': thana,
       'officer_name': officerName,
       'officer_id' : officerId,
+      'status': status,
+      'transaction_id': transactionId,
     };
   }
 }
