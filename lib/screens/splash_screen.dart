@@ -42,6 +42,7 @@ class _SplashScreenState extends State<SplashScreen> {
           userName: user['name']!,
           email: user['email']!,
           role: user['role']!,
+          id: int.parse(user['id']!),
         );
       } else if (role == 'officer') {
         nextScreen = OfficerDashboardScreen(

@@ -92,6 +92,7 @@ class LoginScreen extends StatelessWidget {
                           userName: user['name'],
                           email: user['email'],
                           role: user['role'],
+                          id: user['id'],
                         );
                       } else if (role == 'officer') {
                         nextScreen = OfficerDashboardScreen(
