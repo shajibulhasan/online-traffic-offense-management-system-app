@@ -3,7 +3,9 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../screens/model/driver_model.dart';
 import '../screens/model/offense_model.dart';
+import '../screens/model/officer.dart';
 import '../urls/urls.dart';
+import 'auth_service.dart';
 
 class OfficerService {
   final String token;
@@ -120,6 +122,96 @@ class OfficerService {
     } catch (e) {
       print('Add offense error: $e');
       rethrow;
+    }
+  }
+
+  Future<List<Officer>> getPendingOfficers() async {
+    try {
+      final response = await http.get(
+        Uri.parse('${Urls.baseUrl}/admin/officers/pending'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+      );
+
+      print('Pending Officers Response Status: ${response.statusCode}');
+      print('Pending Officers Response Body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = json.decode(response.body);
+
+        // Check if response has success and data
+        if (data['success'] == true) {
+          final List<dynamic> officersData = data['data'] ?? [];
+          return officersData.map((json) => Officer.fromJson(json)).toList();
+        } else {
+          throw Exception(data['message'] ?? 'Failed to load pending officers');
+        }
+      } else {
+        throw Exception('Failed to load pending officers: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error in getPendingOfficers: $e');
+      throw Exception('Error: $e');
+    }
+  }
+
+  Future<List<Officer>> getApprovedOfficers() async {
+    try {
+      final response = await http.get(
+        Uri.parse('${Urls.baseUrl}/admin/officers/approved'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+      );
+
+      print('Approved Officers Response Status: ${response.statusCode}');
+      print('Approved Officers Response Body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = json.decode(response.body);
+
+        // Check if response has success and data
+        if (data['success'] == true) {
+          final List<dynamic> officersData = data['data'] ?? [];
+          return officersData.map((json) => Officer.fromJson(json)).toList();
+        } else {
+          throw Exception(data['message'] ?? 'Failed to load approved officers');
+        }
+      } else {
+        throw Exception('Failed to load approved officers: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error in getApprovedOfficers: $e');
+      throw Exception('Error: $e');
+    }
+  }
+
+
+  Future<void> approveOfficer(int officerId) async {
+    try {
+      final token = await AuthService.getToken();
+      if (token == null) throw Exception('No authentication token found');
+
+      final response = await http.post(
+        Uri.parse('${Urls.baseUrl}/admin/officers/$officerId/approve'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      print(response.statusCode);
+      print(response.body);
+
+      if (response.statusCode != 200 && response.statusCode != 201) {
+        throw Exception('Failed to approve officer');
+      }
+    } catch (e) {
+      throw Exception('Error: $e');
     }
   }
 }
