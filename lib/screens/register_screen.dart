@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:online_traffic_offense_management_system/urls/urls.dart';
 
 
 class RegisterScreen extends StatefulWidget {
@@ -89,13 +90,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
               keyboard: TextInputType.number,
             ),
             const SizedBox(height: 16),
-            buildField(
-              controller: licenseController,
-              hint: "License Number",
-              icon: Icons.badge_outlined,
-              keyboard: TextInputType.number,
-            ),
 
+            // License field - only visible when role is 'user'
+            if (selectedRole == 'user') ...[
+              buildField(
+                controller: licenseController,
+                hint: "License Number",
+                icon: Icons.badge_outlined,
+                keyboard: TextInputType.number,
+              ),
+              const SizedBox(height: 16),
+            ],
 
             const SizedBox(height: 24),
 
@@ -134,7 +139,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text("Already hanve an account?"),
+                Text("Already have an account?"),
                 TextButton(onPressed: (){
                   Navigator.pushReplacementNamed(context, '/login');
                 }, child: Text("Login"))
@@ -189,6 +194,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   Future<void> register() async {
+    // Validate required fields
     if (nameController.text.isEmpty ||
         emailController.text.isEmpty ||
         passwordController.text.isEmpty ||
@@ -200,7 +206,30 @@ class _RegisterScreenState extends State<RegisterScreen> {
       return;
     }
 
-    final url = Uri.parse("http://10.0.2.2:8000/api/register");
+    // Validate license field only for user role
+    if (selectedRole == 'user' && licenseController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("License number is required for users")),
+      );
+      return;
+    }
+
+    final url = Uri.parse("${Urls.baseUrl}/register");
+
+    // Prepare request body
+    Map<String, dynamic> requestBody = {
+      "name": nameController.text.trim(),
+      "email": emailController.text.trim(),
+      "password": passwordController.text,
+      "phone": phoneController.text.trim(),
+      "nid": nidController.text.trim(),
+      "role": selectedRole,
+    };
+
+    // Only add license field if role is user
+    if (selectedRole == 'user') {
+      requestBody["license"] = licenseController.text.trim();
+    }
 
     try {
       final response = await http.post(
@@ -209,15 +238,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           "Content-Type": "application/json",
           "Accept": "application/json",
         },
-        body: jsonEncode({
-          "name": nameController.text.trim(),
-          "email": emailController.text.trim(),
-          "password": passwordController.text,
-          "phone": phoneController.text.trim(),
-          "nid": nidController.text.trim(),
-          "license": licenseController.text.trim(),
-          "role": selectedRole,
-        }),
+        body: jsonEncode(requestBody),
       );
 
       final data = jsonDecode(response.body);
