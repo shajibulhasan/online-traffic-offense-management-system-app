@@ -5,11 +5,10 @@ import '../screens/model/assigned_officer.dart';
 
 class AssignedOfficerService {
   final String token;
-  static const String baseUrl = Urls.baseUrl; // Replace with your URL
+  static const String baseUrl = Urls.baseUrl;
 
   AssignedOfficerService({required this.token});
 
-  // Get all assigned officers
   Future<List<AssignedOfficer>> getAllAssignedOfficers() async {
     try {
       final response = await http.get(
@@ -18,29 +17,24 @@ class AssignedOfficerService {
           'Authorization': 'Bearer $token',
           'Accept': 'application/json',
         },
-      );
+      ).timeout(const Duration(seconds: 30));
+      print("Assigned Officers Response Status: ${response.statusCode}");
+      print("Assigned Officers Response Body: ${response.body}");
 
-      print('Assigned Officers Response Status: ${response.statusCode}');
-      print('Assigned Officers Response Body: ${response.body}');
-
-      if (response.statusCode == 200) {
+      if (response.statusCode == 200 && response.body.isNotEmpty) {
         final Map<String, dynamic> data = json.decode(response.body);
         if (data['success'] == true) {
           final List<dynamic> officersData = data['data'] ?? [];
           return officersData.map((json) => AssignedOfficer.fromJson(json)).toList();
-        } else {
-          throw Exception(data['message'] ?? 'Failed to load assigned officers');
         }
-      } else {
-        throw Exception('Failed to load assigned officers: ${response.statusCode}');
       }
+      return [];
     } catch (e) {
       print('Error in getAllAssignedOfficers: $e');
-      throw Exception('Error: $e');
+      return [];
     }
   }
 
-  // Get all officers for dropdown
   Future<List<Map<String, dynamic>>> getAllOfficers() async {
     try {
       final response = await http.get(
@@ -49,19 +43,25 @@ class AssignedOfficerService {
           'Authorization': 'Bearer $token',
           'Accept': 'application/json',
         },
-      );
+      ).timeout(const Duration(seconds: 30));
 
-      print(response.body);
-      print(response.statusCode);
+      print("Officers Response Status: ${response.statusCode}");
+      print("Officers Response Body: ${response.body}");
 
-      if (response.statusCode == 200) {
+      if (response.statusCode == 200 && response.body.isNotEmpty) {
         final Map<String, dynamic> data = json.decode(response.body);
         if (data['success'] == true) {
           final List<dynamic> officersData = data['data'] ?? [];
-          return officersData.map((json) => {
+
+          // শুধু ভালিড অফিসার রাখুন (id 0 বা null বাদ দিন)
+          final validOfficers = officersData
+              .where((json) => json['id'] != null && json['id'] != 0)
+              .map((json) => {
             'id': json['id'],
-            'name': json['name'],
+            'name': json['name']?.toString() ?? 'Unknown',
           }).toList();
+
+          return validOfficers;
         }
       }
       return [];
@@ -71,37 +71,38 @@ class AssignedOfficerService {
     }
   }
 
-  // Get all areas for dropdown
   Future<List<Map<String, dynamic>>> getAllAreas() async {
-    try {
       final response = await http.get(
         Uri.parse('$baseUrl/areas'),
         headers: {
           'Authorization': 'Bearer $token',
           'Accept': 'application/json',
         },
-      );
+      ).timeout(const Duration(seconds: 30));
 
-      if (response.statusCode == 200) {
+      print("Areas Response Status: ${response.statusCode}");
+      print("Areas Response Body: ${response.body}");
+      print(token);
+
+      if (response.statusCode == 200 && response.body.isNotEmpty) {
         final Map<String, dynamic> data = json.decode(response.body);
         if (data['success'] == true) {
           final List<dynamic> areasData = data['data'] ?? [];
           return areasData.map((json) => {
             'id': json['id'],
-            'area_name': json['area_name'],
-            'thana_name': json['thana_name'],
-            'district': json['district'],
+            'area_name': json['area_name']?.toString() ?? '',
+            'thana_name': json['thana_name']?.toString() ?? '',
+            'district': json['district']?.toString() ?? '',
           }).toList();
         }
+      }else{
+        print('Failed to load areas. Status code: ${response.statusCode}');
       }
       return [];
-    } catch (e) {
-      print('Error getting areas: $e');
-      return [];
-    }
+
+
   }
 
-  // Get thanas by district
   Future<List<Map<String, dynamic>>> getThanasByDistrict(String district) async {
     try {
       final response = await http.get(
@@ -110,15 +111,18 @@ class AssignedOfficerService {
           'Authorization': 'Bearer $token',
           'Accept': 'application/json',
         },
-      );
+      ).timeout(const Duration(seconds: 30));
 
-      if (response.statusCode == 200) {
+      print("Thanas Response Status: ${response.statusCode}");
+      print("Thanas Response Body: ${response.body}");
+
+      if (response.statusCode == 200 && response.body.isNotEmpty) {
         final Map<String, dynamic> data = json.decode(response.body);
         if (data['success'] == true) {
           final List<dynamic> thanasData = data['data'] ?? [];
           return thanasData.map((json) => {
             'id': json['id'],
-            'thana_name': json['thana_name'],
+            'thana_name': json['thana_name']?.toString() ?? '',
           }).toList();
         }
       }
@@ -129,12 +133,11 @@ class AssignedOfficerService {
     }
   }
 
-  // Get all districts
   List<String> getAllDistricts() {
     return [
       'Bagerhat', 'Bandarban', 'Barguna', 'Barisal', 'Bhola', 'Bogura',
       'Brahmanbaria', 'Chandpur', 'Chapai Nawabganj', 'Chittagong',
-      'Chuadanga', 'Comilla', "Coxsbazar", 'Dhaka', 'Dinajpur', 'Faridpur',
+      'Chuadanga', 'Comilla', "Cox's Bazar", 'Dhaka', 'Dinajpur', 'Faridpur',
       'Feni', 'Gaibandha', 'Gazipur', 'Gopalganj', 'Habiganj', 'Jamalpur',
       'Jessore', 'Jhalokathi', 'Jhenaidah', 'Joypurhat', 'Khagrachari',
       'Khulna', 'Kishoreganj', 'Kurigram', 'Kushtia', 'Lakshmipur',
@@ -148,7 +151,6 @@ class AssignedOfficerService {
     ];
   }
 
-  // Assign officer
   Future<AssignedOfficer> assignOfficer(Map<String, dynamic> data) async {
     try {
       final response = await http.post(
@@ -159,28 +161,24 @@ class AssignedOfficerService {
           'Content-Type': 'application/json',
         },
         body: json.encode(data),
-      );
+      ).timeout(const Duration(seconds: 30));
 
-      print('Assign Officer Response Status: ${response.statusCode}');
-      print('Assign Officer Response Body: ${response.body}');
+      print("Assign Officer Response Status: ${response.statusCode}");
+      print("Assign Officer Response Body: ${response.body}");
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final Map<String, dynamic> responseData = json.decode(response.body);
         if (responseData['success'] == true && responseData['data'] != null) {
           return AssignedOfficer.fromJson(responseData['data']);
-        } else {
-          throw Exception(responseData['message'] ?? 'Failed to assign officer');
         }
-      } else {
-        throw Exception('Failed to assign officer: ${response.statusCode}');
       }
+      throw Exception('Failed to assign officer');
     } catch (e) {
       print('Error in assignOfficer: $e');
       throw Exception('Error: $e');
     }
   }
 
-  // Update assigned officer
   Future<AssignedOfficer> updateAssignedOfficer(int id, Map<String, dynamic> data) async {
     try {
       final response = await http.put(
@@ -191,28 +189,24 @@ class AssignedOfficerService {
           'Content-Type': 'application/json',
         },
         body: json.encode(data),
-      );
+      ).timeout(const Duration(seconds: 30));
 
-      print('Update Assigned Officer Response Status: ${response.statusCode}');
-      print('Update Assigned Officer Response Body: ${response.body}');
+      print("Update Assigned Officer Response Status: ${response.statusCode}");
+      print("Update Assigned Officer Response Body: ${response.body}");
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> responseData = json.decode(response.body);
         if (responseData['success'] == true && responseData['data'] != null) {
           return AssignedOfficer.fromJson(responseData['data']);
-        } else {
-          throw Exception(responseData['message'] ?? 'Failed to update assigned officer');
         }
-      } else {
-        throw Exception('Failed to update assigned officer: ${response.statusCode}');
       }
+      throw Exception('Failed to update assigned officer');
     } catch (e) {
       print('Error in updateAssignedOfficer: $e');
       throw Exception('Error: $e');
     }
   }
 
-  // Delete assigned officer
   Future<void> deleteAssignedOfficer(int id) async {
     try {
       final response = await http.delete(
@@ -221,17 +215,13 @@ class AssignedOfficerService {
           'Authorization': 'Bearer $token',
           'Accept': 'application/json',
         },
-      );
+      ).timeout(const Duration(seconds: 30));
 
-      print('Delete Assigned Officer Response Status: ${response.statusCode}');
+      print("Delete Assigned Officer Response Status: ${response.statusCode}");
+      print("Delete Assigned Officer Response Body: ${response.body}");
 
-      if (response.statusCode == 200) {
-        final Map<String, dynamic> data = json.decode(response.body);
-        if (data['success'] != true) {
-          throw Exception(data['message'] ?? 'Failed to delete assigned officer');
-        }
-      } else {
-        throw Exception('Failed to delete assigned officer: ${response.statusCode}');
+      if (response.statusCode != 200) {
+        throw Exception('Failed to delete assigned officer');
       }
     } catch (e) {
       print('Error in deleteAssignedOfficer: $e');
