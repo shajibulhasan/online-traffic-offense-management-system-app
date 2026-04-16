@@ -119,5 +119,4 @@ class ApiService {
       print('Error updating offense: $e');
     }
   }
-
 }

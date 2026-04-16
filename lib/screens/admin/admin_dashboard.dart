@@ -8,10 +8,11 @@ import '../../services/auth_service.dart';
 import '../../urls/urls.dart';
 import '../drivers/driver_profile.dart';
 import '../login_screen.dart';
-import 'admin_home_screen.dart';
 import 'area_list_screen.dart';
 import 'assigned_officers_screen.dart';
 import 'package:fl_chart/fl_chart.dart';
+
+import 'offense_management_screen.dart';
 
 class AdminDashboardScreen extends StatefulWidget {
   final String userName;
@@ -50,6 +51,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     "Thana List",
     "Area List",
     "Assigned Officers",
+    "Offense Management",
     "Profile",
   ];
 
@@ -248,7 +250,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             _drawerItem(Icons.location_city, "Thana List", 2),
             _drawerItem(Icons.map, "Area List", 3),
             _drawerItem(Icons.assignment_ind, "Assigned Officers", 4),
-            _drawerItem(Icons.person, "Profile", 5),
+            _drawerItem(Icons.account_circle_outlined, "Offense Management", 5),
+            _drawerItem(Icons.person, "Profile", 6),
             const Spacer(),
             ListTile(
               leading: const Icon(Icons.logout, color: Colors.red),
@@ -277,6 +280,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           BottomNavigationBarItem(icon: Icon(Icons.location_city), label: "Thana List"),
           BottomNavigationBarItem(icon: Icon(Icons.map), label: "Area List"),
           BottomNavigationBarItem(icon: Icon(Icons.assignment_ind), label: "Assigned Officers"),
+          BottomNavigationBarItem(icon: Icon(Icons.account_circle_outlined), label: "Offense Management"),
           BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profile"),
         ],
       ),
@@ -315,7 +319,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         return const AreaListScreen();
       case 4:
         return const AssignedOfficersScreen();
-      case 5:
+        case 5:
+        return const OffenseManagementScreen();
+      case 6:
         if (token == null) {
           return const Center(child: CircularProgressIndicator());
         }

@@ -76,72 +76,70 @@ class _AssignedOfficersScreenState extends State<AssignedOfficersScreen> {
     bool isLoadingAreas = true;
     bool isLoadingThanas = false;
 
+    // FIX: guard flag so microtask only fires once
+    bool _initialized = false;
+
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (BuildContext context) {
         return StatefulBuilder(
           builder: (BuildContext context, StateSetter setDialogState) {
-            // Load initial data once
-            if (isLoadingOfficers || isLoadingAreas) {
+            // FIX: only load once using _initialized flag
+            if (!_initialized) {
+              _initialized = true;
               Future.microtask(() async {
-                // Load officers
-                if (isLoadingOfficers) {
-                  try {
-                    final fetchedOfficers = await _service!.getAllOfficers();
-                    if (!mounted) return;
-                    setDialogState(() {
-                      officers = fetchedOfficers;
-                      isLoadingOfficers = false;
-                      // Set officer name for edit mode
-                      if (isEdit && selectedOfficerId != null) {
-                        final found = officers.firstWhere(
-                              (o) => o['id'] == selectedOfficerId,
-                          orElse: () => {},
-                        );
-                        if (found.isNotEmpty) {
-                          selectedOfficerName = found['name']?.toString() ?? '';
-                        }
+                // Load officers - FIXED: Ensure officers list is populated
+                try {
+                  final fetchedOfficers = await _service!.getAllOfficers();
+                  if (!mounted) return;
+                  setDialogState(() {
+                    officers = fetchedOfficers;
+                    isLoadingOfficers = false;
+                    if (isEdit && selectedOfficerId != null) {
+                      final found = officers.firstWhere(
+                            (o) => o['id'] == selectedOfficerId,
+                        orElse: () => {},
+                      );
+                      if (found.isNotEmpty) {
+                        selectedOfficerName = found['name']?.toString() ?? '';
                       }
-                    });
-                  } catch (e) {
-                    if (!mounted) return;
-                    setDialogState(() {
-                      isLoadingOfficers = false;
-                    });
-                  }
+                    }
+                  });
+                } catch (e) {
+                  if (!mounted) return;
+                  setDialogState(() {
+                    isLoadingOfficers = false;
+                    officers = [];
+                  });
                 }
 
                 // Load all areas
-                if (isLoadingAreas) {
-                  try {
-                    final fetchedAreas = await _service!.getAllAreas();
-                    if (!mounted) return;
-                    setDialogState(() {
-                      allAreas = fetchedAreas;
-                      isLoadingAreas = false;
-                    });
-                  } catch (e) {
-                    if (!mounted) return;
-                    setDialogState(() {
-                      isLoadingAreas = false;
-                    });
-                  }
+                try {
+                  final fetchedAreas = await _service!.getAllAreas();
+                  if (!mounted) return;
+                  setDialogState(() {
+                    allAreas = fetchedAreas;
+                    isLoadingAreas = false;
+                  });
+                } catch (e) {
+                  if (!mounted) return;
+                  setDialogState(() {
+                    isLoadingAreas = false;
+                    allAreas = [];
+                  });
                 }
 
                 // Load thanas for edit mode
-                if (isEdit && selectedDistrict != null && thanas.isEmpty) {
+                if (isEdit && selectedDistrict != null) {
                   try {
-                    final fetchedThanas = await _service!.getThanasByDistrict(selectedDistrict!);
+                    final fetchedThanas =
+                    await _service!.getThanasByDistrict(selectedDistrict!);
                     if (!mounted) return;
-                    setDialogState(() {
-                      thanas = fetchedThanas;
-                    });
+                    setDialogState(() => thanas = fetchedThanas);
                   } catch (e) {
                     if (!mounted) return;
-                    setDialogState(() {
-                      thanas = [];
-                    });
+                    setDialogState(() => thanas = []);
                   }
                 }
               });
@@ -173,7 +171,8 @@ class _AssignedOfficersScreenState extends State<AssignedOfficersScreen> {
                       onTap: (isLoadingOfficers || officers.isEmpty)
                           ? null
                           : () async {
-                        final selected = await showModalBottomSheet<int>(
+                        final selected =
+                        await showModalBottomSheet<int>(
                           context: context,
                           shape: const RoundedRectangleBorder(
                             borderRadius: BorderRadius.vertical(
@@ -183,22 +182,18 @@ class _AssignedOfficersScreenState extends State<AssignedOfficersScreen> {
                             return SafeArea(
                               child: _buildBottomSheet(
                                 title: 'Select Officer',
-                                child: isLoadingOfficers
-                                    ? const Center(
-                                    child: CircularProgressIndicator())
-                                    : ListView(
+                                child: ListView(
                                   children: officers.map((o) {
                                     final id = o['id'] as int;
-                                    final name = o['name']?.toString() ??
-                                        'Unknown';
+                                    final name =
+                                        o['name']?.toString() ??
+                                            'Unknown';
                                     return ListTile(
-                                      leading: const Icon(
-                                          Icons.person,
+                                      leading: const Icon(Icons.person,
                                           color: Colors.green),
                                       title: Text(name),
                                       trailing: selectedOfficerId == id
-                                          ? const Icon(
-                                          Icons.check,
+                                          ? const Icon(Icons.check,
                                           color: Colors.green)
                                           : null,
                                       onTap: () =>
@@ -253,16 +248,14 @@ class _AssignedOfficersScreenState extends State<AssignedOfficersScreen> {
                                 child: ListView(
                                   children: districts.map((d) {
                                     return ListTile(
-                                      leading: const Icon(
-                                          Icons.location_city,
+                                      leading: const Icon(Icons.location_city,
                                           color: Colors.green),
                                       title: Text(d),
                                       trailing: selectedDistrict == d
                                           ? const Icon(Icons.check,
                                           color: Colors.green)
                                           : null,
-                                      onTap: () =>
-                                          Navigator.pop(context, d),
+                                      onTap: () => Navigator.pop(context, d),
                                     );
                                   }).toList(),
                                 ),
@@ -280,8 +273,8 @@ class _AssignedOfficersScreenState extends State<AssignedOfficersScreen> {
                           });
 
                           try {
-                            final fetchedThanas = await _service!
-                                .getThanasByDistrict(selected);
+                            final fetchedThanas =
+                            await _service!.getThanasByDistrict(selected);
                             if (!mounted) return;
                             setDialogState(() {
                               thanas = fetchedThanas;
@@ -307,12 +300,12 @@ class _AssignedOfficersScreenState extends State<AssignedOfficersScreen> {
                     _buildLabel('Thana'),
                     const SizedBox(height: 8),
                     _buildDropdownContainer(
-                      onTap: selectedDistrict == null
+                      // FIX: disable while loading thanas too
+                      onTap: (selectedDistrict == null || isLoadingThanas)
                           ? null
                           : () async {
-                        if (isLoadingThanas) return;
-
-                        final selected = await showModalBottomSheet<String>(
+                        final selected =
+                        await showModalBottomSheet<String>(
                           context: context,
                           shape: const RoundedRectangleBorder(
                             borderRadius: BorderRadius.vertical(
@@ -322,10 +315,7 @@ class _AssignedOfficersScreenState extends State<AssignedOfficersScreen> {
                             return SafeArea(
                               child: _buildBottomSheet(
                                 title: 'Select Thana',
-                                child: isLoadingThanas
-                                    ? const Center(
-                                    child: CircularProgressIndicator())
-                                    : thanas.isEmpty
+                                child: thanas.isEmpty
                                     ? const Center(
                                   child: Padding(
                                     padding: EdgeInsets.all(20),
@@ -348,7 +338,8 @@ class _AssignedOfficersScreenState extends State<AssignedOfficersScreen> {
                                       selectedThana == thanaName
                                           ? const Icon(
                                           Icons.check,
-                                          color: Colors.green)
+                                          color:
+                                          Colors.green)
                                           : null,
                                       onTap: () => Navigator.pop(
                                           context, thanaName),
@@ -360,7 +351,8 @@ class _AssignedOfficersScreenState extends State<AssignedOfficersScreen> {
                           },
                         );
 
-                        if (selected != null && selected != selectedThana) {
+                        if (selected != null &&
+                            selected != selectedThana) {
                           setDialogState(() {
                             selectedThana = selected;
                             selectedArea = null;
@@ -368,25 +360,31 @@ class _AssignedOfficersScreenState extends State<AssignedOfficersScreen> {
                         }
                       },
                       icon: Icons.location_on,
+                      // FIX: show loading indicator text when thanas are loading
                       displayText: selectedDistrict == null
                           ? 'Select district first'
+                          : isLoadingThanas
+                          ? 'Loading thanas...'
                           : (selectedThana ?? 'Select Thana'),
                       hasValue: selectedThana != null,
                     ),
 
                     const SizedBox(height: 16),
 
-                    // Area Dropdown
+                    // Area Dropdown - FIXED
                     _buildLabel('Area Lead'),
                     const SizedBox(height: 8),
                     _buildDropdownContainer(
-                      onTap: selectedThana == null
+                      // FIX: disable while areas are still loading
+                      onTap: (selectedThana == null || isLoadingAreas)
                           ? null
                           : () async {
-                        // Filter areas based on selected thana
+                        // FIXED: Filter areas by thana name correctly
                         final filteredAreas = allAreas
-                            .where((area) =>
-                        area['thana_name'] == selectedThana)
+                            .where((area) {
+                          final areaThana = area['thana_name']?.toString() ?? '';
+                          return areaThana == selectedThana;
+                        })
                             .toList();
 
                         if (filteredAreas.isEmpty) {
@@ -396,7 +394,8 @@ class _AssignedOfficersScreenState extends State<AssignedOfficersScreen> {
                           return;
                         }
 
-                        final selected = await showModalBottomSheet<String>(
+                        final selected =
+                        await showModalBottomSheet<String>(
                           context: context,
                           shape: const RoundedRectangleBorder(
                             borderRadius: BorderRadius.vertical(
@@ -429,16 +428,19 @@ class _AssignedOfficersScreenState extends State<AssignedOfficersScreen> {
                         );
 
                         if (selected != null && selected != selectedArea) {
-                          setDialogState(() {
-                            selectedArea = selected;
-                          });
+                          setDialogState(() => selectedArea = selected);
                         }
                       },
                       icon: Icons.list_alt,
+                      // FIXED: Show loading text while areas are loading
                       displayText: selectedThana == null
                           ? 'Select thana first'
-                          : (selectedArea ?? 'Select Area Lead'),
-                      hasValue: selectedArea != null,
+                          : isLoadingAreas
+                          ? 'Loading areas...'
+                          : (selectedArea != null && selectedArea!.isNotEmpty
+                          ? selectedArea!
+                          : 'Select Area Lead'),
+                      hasValue: selectedArea != null && selectedArea!.isNotEmpty,
                     ),
                   ],
                 ),
@@ -462,7 +464,7 @@ class _AssignedOfficersScreenState extends State<AssignedOfficersScreen> {
                       _showSnackBar('Please select thana', Colors.orange);
                       return;
                     }
-                    if (selectedArea == null) {
+                    if (selectedArea == null || selectedArea!.isEmpty) {
                       _showSnackBar('Please select area lead', Colors.orange);
                       return;
                     }
@@ -477,7 +479,8 @@ class _AssignedOfficersScreenState extends State<AssignedOfficersScreen> {
                     };
 
                     if (isEdit) {
-                      await _updateAssignedOfficer(editOfficer!.id, officerData);
+                      await _updateAssignedOfficer(
+                          editOfficer!.id, officerData);
                     } else {
                       await _assignOfficer(officerData);
                     }
@@ -541,7 +544,17 @@ class _AssignedOfficersScreenState extends State<AssignedOfficersScreen> {
                   ),
                 ),
               ),
-              Icon(Icons.arrow_drop_down, color: Colors.green.shade600),
+              // FIX: show spinner inside dropdown when onTap is null due to loading
+              onTap == null && (displayText.contains('Loading'))
+                  ? SizedBox(
+                width: 18,
+                height: 18,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: Colors.green.shade600,
+                ),
+              )
+                  : Icon(Icons.arrow_drop_down, color: Colors.green.shade600),
             ],
           ),
         ),
@@ -561,8 +574,8 @@ class _AssignedOfficersScreenState extends State<AssignedOfficersScreen> {
             padding: const EdgeInsets.symmetric(vertical: 12),
             child: Text(
               title,
-              style: const TextStyle(
-                  fontSize: 18, fontWeight: FontWeight.bold),
+              style:
+              const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
           ),
           const Divider(height: 1),
@@ -593,7 +606,8 @@ class _AssignedOfficersScreenState extends State<AssignedOfficersScreen> {
     }
   }
 
-  Future<void> _updateAssignedOfficer(int id, Map<String, dynamic> data) async {
+  Future<void> _updateAssignedOfficer(
+      int id, Map<String, dynamic> data) async {
     if (_service == null) return;
     setState(() => _isLoading = true);
 
@@ -666,7 +680,8 @@ class _AssignedOfficersScreenState extends State<AssignedOfficersScreen> {
         backgroundColor: color,
         duration: const Duration(seconds: 2),
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        shape:
+        RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       ),
     );
   }
@@ -779,8 +794,8 @@ class _AssignedOfficersScreenState extends State<AssignedOfficersScreen> {
             ),
           ),
           title: Text(officer.name,
-              style: const TextStyle(
-                  fontWeight: FontWeight.bold, fontSize: 16)),
+              style:
+              const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
           subtitle: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -830,13 +845,15 @@ class _AssignedOfficersScreenState extends State<AssignedOfficersScreen> {
                     children: [
                       Expanded(
                         child: ElevatedButton.icon(
-                          onPressed: () => _showAssignDialog(officer: officer),
+                          onPressed: () =>
+                              _showAssignDialog(officer: officer),
                           icon: const Icon(Icons.edit, size: 18),
                           label: const Text('Edit'),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.blue,
                             foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            padding:
+                            const EdgeInsets.symmetric(vertical: 12),
                             shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(8)),
                           ),
@@ -851,7 +868,8 @@ class _AssignedOfficersScreenState extends State<AssignedOfficersScreen> {
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.red,
                             foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            padding:
+                            const EdgeInsets.symmetric(vertical: 12),
                             shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(8)),
                           ),
