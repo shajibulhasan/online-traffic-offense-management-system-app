@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:dio/dio.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:open_filex/open_filex.dart';
 import '../../services/api_service.dart';
 import '../payment/bkash_payment_screen.dart';
 
@@ -11,6 +14,7 @@ class MyOffenseScreen extends StatefulWidget {
 
 class _MyOffenseScreenState extends State<MyOffenseScreen> {
   late Future<List<dynamic>> offenseFuture;
+  bool _isDownloading = false;
 
   @override
   void initState() {
@@ -70,12 +74,64 @@ class _MyOffenseScreenState extends State<MyOffenseScreen> {
     }
   }
 
+  Future<void> _downloadPdf() async {
+    if (_isDownloading) return;
+    setState(() => _isDownloading = true);
+
+    try {
+      final path = await ApiService.downloadOffensePdf();
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('PDF downloaded successfully'),
+          backgroundColor: Colors.green,
+          action: SnackBarAction(
+            label: 'Open',
+            textColor: Colors.white,
+            onPressed: () => OpenFilex.open(path),
+          ),
+        ),
+      );
+
+      await OpenFilex.open(path);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Download failed: $e'), backgroundColor: Colors.red),
+      );
+      print('Download failed: $e');
+    } finally {
+      if (mounted) setState(() => _isDownloading = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('My Offenses'),
         elevation: 0,
+        actions: [
+          _isDownloading
+              ? const Padding(
+            padding: EdgeInsets.all(16.0),
+            child: SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: Colors.white,
+              ),
+            ),
+          )
+              : IconButton(
+            icon: const Icon(Icons.picture_as_pdf),
+            tooltip: 'Download PDF',
+            onPressed: _downloadPdf,
+          ),
+        ],
       ),
       body: FutureBuilder<List<dynamic>>(
         future: offenseFuture,

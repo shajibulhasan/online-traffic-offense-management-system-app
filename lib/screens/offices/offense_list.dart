@@ -5,13 +5,19 @@ import 'dart:convert';
 import '../../services/auth_service.dart';
 import '../../urls/urls.dart';
 import 'edit_offense_screen.dart';
+import 'package:dio/dio.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:open_filex/open_filex.dart';
 
 class OfficerOffenseListScreen extends StatefulWidget {
+
   @override
   _OfficerOffenseListScreenState createState() => _OfficerOffenseListScreenState();
 }
 
+
 class _OfficerOffenseListScreenState extends State<OfficerOffenseListScreen> {
+  bool _isDownloadingPdf = false;
   String? _selectedSearchType;
   final TextEditingController _searchController = TextEditingController();
   List<Offense> _offenses = [];
@@ -26,6 +32,57 @@ class _OfficerOffenseListScreenState extends State<OfficerOffenseListScreen> {
     {'value': 'license', 'label': 'License'},
     {'value': 'nid', 'label': 'NID'},
   ];
+
+  Future<void> _downloadDriverPdf() async {
+    if (_driverInfo == null || _driverInfo!['id'] == null) {
+      _showAlert('No driver selected');
+      return;
+    }
+
+    setState(() => _isDownloadingPdf = true);
+
+    try {
+      final token = await AuthService.getToken();
+      final driverId = _driverInfo!['id'];
+
+      final dio = Dio();
+      final url = '${Urls.baseUrl}/offense-list-pdf/$driverId';
+
+      final dir = await getApplicationDocumentsDirectory();
+      final savePath = '${dir.path}/offense_list_$driverId.pdf';
+
+      await dio.download(
+        url,
+        savePath,
+        options: Options(
+          headers: {'Authorization': 'Bearer $token'},
+          validateStatus: (status) => status != null && status < 500,
+        ),
+      );
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('PDF downloaded successfully'),
+          backgroundColor: Colors.green,
+          action: SnackBarAction(
+            label: 'Open',
+            textColor: Colors.white,
+            onPressed: () => OpenFilex.open(savePath),
+          ),
+        ),
+      );
+
+      await OpenFilex.open(savePath);
+    } catch (e) {
+      debugPrint('PDF download error: $e');
+      if (!mounted) return;
+      _showAlert('Failed to download PDF');
+    } finally {
+      if (mounted) setState(() => _isDownloadingPdf = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -190,6 +247,28 @@ class _OfficerOffenseListScreenState extends State<OfficerOffenseListScreen> {
                     _buildInfoRow('Name:', _driverInfo!['name'] ?? 'N/A'),
                     _buildInfoRow('Email:', _driverInfo!['email'] ?? 'N/A'),
                     _buildInfoRow('Phone:', _driverInfo!['phone'] ?? 'N/A'),
+                    SizedBox(height: 8),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        onPressed: _isDownloadingPdf ? null : _downloadDriverPdf,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.red.shade600,
+                          foregroundColor: Colors.white,
+                        ),
+                        icon: _isDownloadingPdf
+                            ? SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                            : Icon(Icons.picture_as_pdf, size: 18),
+                        label: Text(_isDownloadingPdf ? 'Downloading...' : 'Download PDF'),
+                      ),
+                    ),
                   ],
                 ),
               ),

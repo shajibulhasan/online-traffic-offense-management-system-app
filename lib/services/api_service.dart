@@ -3,6 +3,8 @@ import 'package:flutter/cupertino.dart';
 import 'package:http/http.dart' as http;
 import 'package:online_traffic_offense_management_system/urls/urls.dart';
 import 'auth_service.dart';
+import 'package:dio/dio.dart';
+import 'package:path_provider/path_provider.dart';
 
 class ApiService {
   static const String baseUrl = Urls.baseUrl;
@@ -118,5 +120,35 @@ class ApiService {
     } catch (e) {
       print('Error updating offense: $e');
     }
+  }
+
+  static Future<String> downloadOffensePdf() async {
+    final token = await AuthService.getToken();
+    final user = await AuthService.getUser();
+    final userId = user['id'];
+
+    if (token == null || userId == null) {
+      throw Exception('User not logged in');
+    }
+
+    final dio = Dio();
+
+    final url = "$baseUrl/offense-list-pdf/$userId";
+
+    final dir = await getApplicationDocumentsDirectory();
+    final savePath = "${dir.path}/offense_list_$userId.pdf";
+
+    await dio.download(
+      url,
+      savePath,
+      options: Options(
+        headers: {
+          'Authorization': 'Bearer $token',
+        },
+        validateStatus: (status) => status != null && status < 500,
+      ),
+    );
+
+    return savePath;
   }
 }
