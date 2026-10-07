@@ -71,7 +71,6 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
       };
 
 
-      // Make the API call - আপনার ব্যাকএন্ডে POST method ব্যবহার করা হয়েছে
       final response = await http.post(
         Uri.parse('${Urls.baseUrl}/update-profile/${widget.driver.id}'),
         headers: {
@@ -119,7 +118,7 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
       }
     } catch (e) {
       // Handle network errors
-      print('Network Error Details: $e'); // কনসোলে প্রিন্ট করুন
+      print('Network Error Details: $e');
       print('Error type: ${e.runtimeType}');
       String errorMessage = "Network Error";
       if (e.toString().contains('SocketException')) {

@@ -40,7 +40,7 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
       })
           .catchError((error) {
         debugPrint('❌ Error loading driver: $error');
-        return error;
+        throw error;
       });
     });
   }
@@ -182,7 +182,9 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
                         children: [
                           CircleAvatar(
                             radius: 60,
+                            backgroundColor: Colors.white24,
                             backgroundImage: _getProfileImage(driver),
+                            onBackgroundImageError: (e, s) => debugPrint('❌ Image load error: $e'),
                           ),
                           const SizedBox(height: 12),
                           Text(
@@ -313,10 +315,11 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
   }
 
   ImageProvider _getProfileImage(DriverModel driver) {
-    if (driver.profileImage != null && driver.profileImage!.isNotEmpty) {
-      return NetworkImage(driver.profileImage!);
+    final img = driver.profileImage;
+    if (img != null && img.isNotEmpty) {
+      debugPrint('🖼️ Profile image URL: $img');
+      return NetworkImage(img);
     }
-    // Make sure you have this asset in pubspec.yaml
     return const AssetImage("asset/unknown.png");
   }
 }
