@@ -314,11 +314,13 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
     );
   }
 
+  String kImageBaseUrl = 'https://otoms.millennium-solution.com/images/';
   ImageProvider _getProfileImage(DriverModel driver) {
     final img = driver.profileImage;
     if (img != null && img.isNotEmpty) {
-      debugPrint('🖼️ Profile image URL: $img');
-      return NetworkImage(img);
+      final url = img.startsWith('http') ? img : '$kImageBaseUrl$img';
+      debugPrint('🖼️ Profile image URL: $url');
+      return NetworkImage(url);
     }
     return const AssetImage("asset/unknown.png");
   }
