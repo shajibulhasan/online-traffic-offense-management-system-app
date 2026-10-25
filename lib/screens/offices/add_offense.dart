@@ -244,10 +244,9 @@ class _AddOffenseScreenState extends State<AddOffenseScreen> {
       OfficerService service = OfficerService(token: widget.token);
       OffenseModel added = await service.addOffense(offense);
 
-      // প্রথমে সাকসেস ডায়ালগ দেখান (currentDriver ব্যবহার করে)
       _showSuccessDialog(added, currentDriver);
 
-      // তারপর ফর্ম ক্লিয়ার করুন
+
       _clearSelectedDriver();
       _selectedOffenseType = '';
       _offenseDetailsController.clear();
@@ -443,13 +442,12 @@ class _AddOffenseScreenState extends State<AddOffenseScreen> {
                 const SizedBox(width: 8),
                 // Search Button
                 ElevatedButton(
-                  onPressed: (_selectedSearchType.isNotEmpty &&
-                      _searchController.text.isNotEmpty &&
-                      !_isSearching)
+                  onPressed: (_selectedSearchType.isNotEmpty && !_isSearching)
                       ? _searchDriver
                       : null,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue,
+                    backgroundColor: Colors.green,
+                    foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(
                       horizontal: 16,
                       vertical: 14,
