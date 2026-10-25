@@ -476,9 +476,9 @@ class _PendingOfficersList extends StatelessWidget {
                   child: const Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.check_circle, size: 18),
+                      Icon(Icons.check_circle, size: 18, color: Colors.white),
                       SizedBox(width: 6),
-                      Text('Approve'),
+                      Text('Approve', style: TextStyle(color: Colors.white),),
                     ],
                   ),
                 ),
@@ -610,14 +610,14 @@ class _ApprovedOfficersList extends StatelessWidget {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                           decoration: BoxDecoration(
-                            color: Colors.green.shade100,
+                            color: Colors.green.shade50,
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(
                             'NID: ${officer.nid}',
                             style: TextStyle(
                               fontSize: 11,
-                              color: Colors.green.shade800,
+                              color: Colors.green.shade900,
                             ),
                           ),
                         ),
@@ -657,7 +657,7 @@ class _ApprovedOfficersList extends StatelessWidget {
                       Text(
                         'Approved',
                         style: TextStyle(
-                          color: Colors.green,
+                          color: Colors.green.shade700,
                           fontWeight: FontWeight.w500,
                           fontSize: 12,
                         ),
