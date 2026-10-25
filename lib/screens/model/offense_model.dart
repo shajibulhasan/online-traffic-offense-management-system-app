@@ -53,7 +53,7 @@ class OffenseModel {
       'fine': fine,
       'point': point,
       'driver_id': driverId,
-      'thana': thana,
+      'thana_name': thana,
       'officer_name': officerName,
       'officer_id' : officerId,
       'status': status,

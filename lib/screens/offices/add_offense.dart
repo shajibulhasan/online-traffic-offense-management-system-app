@@ -652,7 +652,7 @@ class _AddOffenseScreenState extends State<AddOffenseScreen> {
                       : const Icon(Icons.add),
                   label: Text(
                     _isSubmitting ? 'Adding...' : 'Add Offense',
-                    style: const TextStyle(fontSize: 16),
+                    style: const TextStyle(fontSize: 16, color: Colors.white),
                   ),
                 ),
               ),
